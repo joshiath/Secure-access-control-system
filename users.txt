@@ -1,0 +1,4 @@
+hernandez,IronTeacher27!,TEACHER
+jsmith,Panther2026!,STUDENT
+agarcia,JavaRules88!,STUDENT
+admin1,SecureAdmin42!,ADMIN
