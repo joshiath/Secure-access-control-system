@@ -1,29 +1,28 @@
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Scanner;
-import java.util.Set;
 
 public class Control {
     private static final String USERS_FILE = "users.txt";
     private static final String PROTECTED_FILE = "protected_data.txt";
 
     public static void main(String[] args) {
-        UserAccount user = authenticateUser();
+        try (Scanner console = new Scanner(System.in)) {
+            UserAccount user = authenticateUser(console);
 
-        if (user == null) {
-            System.out.println("LOGIN FAILED");
-            return;
+            if (user == null) {
+                System.out.println("LOGIN FAILED");
+                return;
+            }
+
+            System.out.println("LOGIN SUCCESSFUL");
+            displayAuthorizedInformation(user.role);
         }
-
-        System.out.println("LOGIN SUCCESSFUL");
-        displayAuthorizedInformation(user.role);
     }
 
-    private static UserAccount authenticateUser() {
-        Scanner console = new Scanner(System.in);
+    private static UserAccount authenticateUser(Scanner console) {
         System.out.print("Enter username: ");
         String username = console.nextLine().trim();
         System.out.print("Enter password: ");
@@ -57,7 +56,7 @@ public class Control {
 
                 String[] data = line.split(",");
                 if (data.length != 3) {
-                    System.out.println("Skipping malformed user record: " + line);
+                    System.out.println("Skipping malformed user record.");
                     continue;
                 }
 
@@ -66,7 +65,7 @@ public class Control {
                 String role = data[2].trim().toUpperCase();
 
                 if (username.isEmpty() || password.isEmpty() || role.isEmpty()) {
-                    System.out.println("Skipping incomplete user record: " + line);
+                    System.out.println("Skipping incomplete user record.");
                     continue;
                 }
 
@@ -86,26 +85,6 @@ public class Control {
             return;
         }
 
-        Set<String> authorizedLevels = new HashSet<>();
-        authorizedLevels.add("PUBLIC");
-
-        switch (role.toUpperCase()) {
-            case "STUDENT":
-                authorizedLevels.add("STUDENT");
-                break;
-            case "TEACHER":
-                authorizedLevels.add("STUDENT");
-                authorizedLevels.add("TEACHER");
-                break;
-            case "ADMIN":
-                authorizedLevels.add("STUDENT");
-                authorizedLevels.add("TEACHER");
-                authorizedLevels.add("ADMIN");
-                break;
-            default:
-                break;
-        }
-
         for (String record : records) {
             String[] parts = record.split("\\|", 2);
             if (parts.length != 2) {
@@ -115,9 +94,28 @@ public class Control {
             String level = parts[0].trim().toUpperCase();
             String message = parts[1].trim();
 
-            if (authorizedLevels.contains(level)) {
+            if (isAuthorized(role, level)) {
                 System.out.println(message);
             }
+        }
+    }
+
+    private static boolean isAuthorized(String role, String informationLevel) {
+        if (informationLevel.equals("PUBLIC")) {
+            return true;
+        }
+
+        switch (role.toUpperCase()) {
+            case "STUDENT":
+                return informationLevel.equals("STUDENT");
+            case "TEACHER":
+                return informationLevel.equals("STUDENT") || informationLevel.equals("TEACHER");
+            case "ADMIN":
+                return informationLevel.equals("STUDENT")
+                        || informationLevel.equals("TEACHER")
+                        || informationLevel.equals("ADMIN");
+            default:
+                return false;
         }
     }
 
@@ -163,4 +161,4 @@ public class Control {
         }
     }
 }
-// tetdetydwq
+
